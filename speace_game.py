@@ -29,7 +29,7 @@ en_y_change=[]
 num_en=6
 
 for i in range(num_en):
-    e_img.append(pygame.image.load("enemy.png"))
+    e_img.append(pygame.image.load("download (3).png"))
     en_x.append(random.randint(0,s_w-64))
     en_y.append(random.randint(e_s_y_max, s_h - e_s_y_max))
     en_x_change.append(e_s_x)
@@ -48,7 +48,7 @@ text_x=10
 text_y=10
 over=pygame.font.Font("freesansbold.ttf", 64)
 def show_score(x, y):
-    score= font.render("Score: " + str(score), True, (255, 255, 255))
+    score_display = font.render("Score: " + str(score), True, (255, 255, 255))
     screen.blit(score_display, (x, y))
 
 def game_over_text():
@@ -66,3 +66,62 @@ def fire_bullet(x, y):
     b_state = "fire"
     screen.blit(b_img, (x + 16, y + 10))
 
+def is_collision(en_x, en_y, b_x, b_y):
+    distance = math.sqrt((en_x - b_x) ** 2 + (en_y - b_y) ** 2)
+    return distance < c_d
+
+running = True
+while running:
+    screen.fill((0,0,0))
+    screen.blit(bg, (0, 0))
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_LEFT:
+                p_x_change = -5
+            if event.key == pygame.K_RIGHT:
+                p_x_change = 5
+            if event.key == pygame.K_SPACE and b_state == "ready":
+                b_x= p_x
+                b_y= p_y
+                b_state = "fire"
+
+        if event.type == pygame.KEYUP:
+            if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
+                p_x_change = 0 
+
+    p_x += p_x_change
+    p_x = max(0, min(p_x, s_w - 64))
+
+    for i in range(num_en):
+        if en_y[i]>340:
+            for j in range(num_en):
+                en_y[j] = 2000
+            game_over_text()
+            break
+        en_x[i]+= en_x_change[i]
+        if en_x[i]<= 0 or en_x[i] >= s_w - 64:
+            en_x_change[i] *= -1
+            en_y[i] += en_y_change[i]
+        
+        if is_collision(en_x[i], en_y[i], b_x, b_y):
+            b_y = p_s_y
+            b_state = "ready"
+            score += 1
+            en_x[i] = random.randint(0, s_w - 64)
+            en_y[i] = random.randint(e_s_y_max, s_h - e_s_y_max)
+
+        enemy(en_x[i], en_y[i], i)
+
+    if b_state == "fire":
+        fire_bullet(b_x, b_y)
+        b_y -= b_y_change
+        if b_y <= 0:
+            b_y = p_s_y
+            b_state = "ready"
+    
+    player(p_x, p_y)
+    show_score(text_x, text_y)
+    pygame.display.update()
